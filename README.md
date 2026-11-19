@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vehicle Insight
 
-## Getting Started
+Research NHTSA owner complaints and recalls for a vehicle, for service contract retention specialists.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/lib/parse-vehicle.ts` splits pasted text ("2019 Toyota Camry") into year / make / model; users can edit before searching.
+- `GET /api/vehicle?year=&make=&model=` (`src/app/api/vehicle/route.ts`) calls NHTSA live, with no caching and no mock data:
+  - `api.nhtsa.gov/complaints/complaintsByVehicle`: owner-reported complaints (unverified)
+  - `api.nhtsa.gov/recalls/recallsByVehicle`: recalls (confirmed defects); a failure here doesn't block complaints
+  - `api.nhtsa.gov/products/vehicle/models`: only when nothing is found, to suggest NHTSA's model names
+- Investigations aren't summarized: NHTSA's `/investigations` endpoint ignores vehicle filters, so the UI links to the vehicle's NHTSA.gov page instead.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## NHTSA data quirks handled
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Complaint `components` are joined with bare commas, but names can contain ", " (e.g. "FUEL SYSTEM, GASOLINE"), so the code splits only on `,` not followed by a space.
+- Complaint dates are `MM/DD/YYYY`; recall `ReportReceivedDate` is `DD/MM/YYYY`.
